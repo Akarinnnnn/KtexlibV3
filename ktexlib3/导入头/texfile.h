@@ -116,7 +116,7 @@ namespace ktexlib
 		/// <summary>
 		/// 材质种类
 		/// </summary>
-		enum class textureType : unsigned char
+		enum class TextureType : unsigned char
 		{
 			/// <summary>1D</summary>
 			d1 = 1,
@@ -128,16 +128,16 @@ namespace ktexlib
 			cubemap = 4
 		};
 
-		struct Mipmap
+		struct KTEXLIB3_EXPORT Mipmap
 		{
-			Mipmap(int32_t w, int32_t h, int32_t pitch);
+			Mipmap(uint32_t w, uint32_t h, uint32_t pitch);
 			Mipmap(const Mipmap& other);
 			Mipmap(Mipmap&& xval) noexcept;
 
 			Mipmap(const uint32_t w, const uint32_t h, const uint32_t pitch, const std::vector<unsigned char>& data);
 			Mipmap(const uint32_t w, const uint32_t h, const uint32_t pitch, std::vector<unsigned char>&& data) noexcept;
 
-			int32_t width, height, pitch = 0;//pitch是一行的数据长度，以字节为单位
+			uint32_t width, height, pitch = 0;//pitch是一行的数据长度，以字节为单位
 			std::vector<unsigned char> data;
 		};
 
@@ -146,12 +146,12 @@ namespace ktexlib
 		struct KTEXInfo
 		{
 			uint8_t flags = 3ui8;
-			textureType textureType = textureType::d2;
+			TextureType textureType = TextureType::d2;
 			PixelFormat pixelFormat = PixelFormat::dxt5;
 			Platform platform = Platform::universal;
 		};
 
-		class Ktex
+		class KTEXLIB3_EXPORT Ktex
 		{
 		public:
 			Ktex() :Mipmaps(this->mips) {}
@@ -242,7 +242,7 @@ namespace ktexlib
 		/// <changed>Fa鸽,2019/11/23</changed>
 		KTEXLIB3_EXPORT ktexlib::v3detail::Ktex load_ktex(std::ifstream& file);
 
-		KTEXLIB3_EXPORT class invalid_mipschain: public std::logic_error
+		class KTEXLIB3_EXPORT invalid_mipschain: public std::logic_error
 		{
 		public:
 			invalid_mipschain(const char* message = "mipmap链各节点间大小不合规"):std::logic_error(message)

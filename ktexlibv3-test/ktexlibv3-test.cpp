@@ -7,15 +7,37 @@ using ktexlib::KTEXFileOperation::pixfrm;
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 namespace tf = Microsoft::VisualStudio::CppUnitTestFramework;
-template <> std::wstring tf::ToString<uint16_t>(const unsigned short& a) { RETURN_WIDE_STRING(a); }
-template <> std::wstring tf::ToString<platfrm> (const platfrm & v)
+template<> std::wstring tf::ToString<uint16_t>(const unsigned short& a) { RETURN_WIDE_STRING(a); }
+template<> std::wstring tf::ToString<platfrm> (const platfrm & v)
 {
 	switch (v)
 	{
 	case platfrm::opengl:
 		return L"OpenGL";
+	case platfrm::ps3:
+		return L"PS3";
+	case platfrm::xb360:
+		return L"XBox360";
+	case platfrm::unk:
+		return L"Universal";
 	default:
-		break;
+		throw std::invalid_argument("未知平台");
+	}
+}
+template<> std::wstring tf::ToString<pixfrm>(const pixfrm& v)
+{
+	switch (v)
+	{
+	case pixfrm::DXT5:
+		return L"DXT3";
+	case pixfrm::DXT3:
+		return L"DXT2";
+	case pixfrm::DXT1:
+		return L"DXT1";
+	case pixfrm::ARGB:
+		return L"ARGB";
+	default:
+		throw std::invalid_argument("未知像素格式");
 	}
 }
 namespace ktexlib

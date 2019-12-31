@@ -22,7 +22,12 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     case DLL_PROCESS_ATTACH:
 	{
 		hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
+#if _DEBUG
+		if (FAILED(hr) && hr != 0x80010106)
+#else
 		if (FAILED(hr))
+#endif // _DEBUG
+
 		{
 			ErrorMsgbox(L"加载COM失败(hresult = %#08X)，即将退出", hr, 10);
 		}
