@@ -1,20 +1,16 @@
 #pragma once
 
 #if defined(KTEXLIB3_EXPORTS) 
-#if defined(_MSC_VER)
 #define	KTEXLIB3_EXPORT __declspec(dllexport)
 #else
 #define KTEXLIB3_EXPORT __declspec(dllimport)
-#endif
-#else
-#define KTEXLIB3_EXPORT
 #endif 
 
 #include <vector>
 #include <filesystem>
 #include <fstream>
 #include <stdexcept>
-//#define PARALLEL_COMPRESS //去掉注释，在windows下进行多线程bc压缩
+#include <combaseapi.h>
 
 namespace ktexlib
 {
@@ -31,7 +27,7 @@ namespace ktexlib
 	};
 
 	template<typename T,typename array_t>
-	struct ro_container_property
+	struct KTEXLIB3_EXPORT ro_container_property
 	{
 		ro_container_property(const array_t& arr):arr(arr) {}
 
@@ -59,7 +55,7 @@ namespace ktexlib
 	};
 
 	template<typename T>
-	struct ro_property
+	struct KTEXLIB3_EXPORT ro_property
 	{
 		ro_property(T& val) :val(val)
 		{
@@ -141,7 +137,13 @@ namespace ktexlib
 			std::vector<unsigned char> data;
 		};
 
-		struct RgbaImage : Mipmap {};
+		struct RgbaImage : Mipmap
+		{
+			RgbaImage() :Mipmap{0,0,0}
+			{
+
+			}
+		};
 
 		struct KTEXInfo
 		{
@@ -187,12 +189,20 @@ namespace ktexlib
 	namespace v3
 	{
 		/// <summary>
+		/// 加载COM
+		/// </summary>
+		/// <returns>HRESULT</returns>
+		/// <created>Fa鸽,2020/1/18</created>
+		/// <changed>Fa鸽,2020/1/18</changed>
+		extern "C" KTEXLIB3_EXPORT HRESULT init_COM_as_mthread();
+
+		/// <summary>
 		/// 指定文件名，转换到同一目录
 		/// </summary>
 		/// <param name="filename">文件名</param>
 		/// <created>Fa鸽,2019/11/1</created>
 		/// <changed>Fa鸽,2019/11/15</changed>
-		extern "C" KTEXLIB3_EXPORT void gen_bc3universal(const char8_t* pngpath);
+		extern "C" KTEXLIB3_EXPORT void gen_bc3universal(const char8_t* pngpath, const char8_t * output = nullptr);
 
 		/// <summary>
 		/// 指定UTF16文件名，转换到同一目录
@@ -201,7 +211,7 @@ namespace ktexlib
 		/// <returns></returns>
 		/// <created>Fa鸽,2019/11/23</created>
 		/// <changed>Fa鸽,2019/11/23</changed>
-		KTEXLIB3_EXPORT bool gen_bc3universal(const char16_t * path);
+		KTEXLIB3_EXPORT bool gen_bc3universal(const char16_t * path, const char16_t * outpath = nullptr);
 
 		/// <summary>
 		/// 指定宽字符文件名，转换到同一目录
@@ -210,7 +220,7 @@ namespace ktexlib
 		/// <returns></returns>
 		/// <created>Fa鸽,2019/11/23</created>
 		/// <changed>Fa鸽,2019/11/23</changed>
-		KTEXLIB3_EXPORT bool gen_bc3universal(const wchar_t * path);
+		KTEXLIB3_EXPORT bool gen_bc3universal(const wchar_t * path, const wchar_t * outpath = nullptr);
 
 		/// <summary>
 		/// 加载一个tex文件
@@ -245,10 +255,7 @@ namespace ktexlib
 		class KTEXLIB3_EXPORT invalid_mipschain: public std::logic_error
 		{
 		public:
-			invalid_mipschain(const char* message = "mipmap链各节点间大小不合规"):std::logic_error(message)
-			{
-				
-			}
+			invalid_mipschain(const char* message = "mipmap链各节点间大小不合规"):std::logic_error(message) {}
 		};
 	}
 

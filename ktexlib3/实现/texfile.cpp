@@ -4,7 +4,7 @@
 #include <memory>
 #include <wincodec.h>
 #include <wil/com.h>
-#include <wil/resource.h>
+#include <wil/result.h>
 #include <iostream>
 #include <locale>
 #include <fstream>
@@ -29,44 +29,69 @@ constexpr inline unsigned int next_4n(unsigned int val)
 	return (val & 0xFFFFFFF8u) + 4;
 }
 
-void ktexlib::v3::gen_bc3universal(const char8_t * filename)
+HRESULT ktexlib::v3::init_COM_as_mthread()
+{
+	HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
+	if (FAILED(hr) && hr != 0x80010106)
+	{
+		ErrorMsgbox(L"加载COM失败(hresult = %#08X)，即将退出", hr, 10);
+	}
+	if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_ALL, IID_IWICImagingFactory2, (LPVOID*)&wicobj::factory)))
+	{
+		hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_ALL, IID_IWICImagingFactory, (LPVOID*)&wicobj::factory);
+		if (FAILED(hr))
+		{
+			ErrorMsgbox(L"创建WIC工厂失败(hresult = %#08X)，即将退出\n这个问题常见于精简版系统", hr, 11);
+		}
+	};
+	return hr;
+}
+
+void ktexlib::v3::gen_bc3universal(const char8_t * filename, const char8_t * output)
 {
 	//cout << std::hex;
 	char16_t path[MAX_PATH]{ 0 };
+	char16_t out[MAX_PATH]{ 0 };
 	{
 		mbstate_t mb;
 		const char8_t* from_next = nullptr;
 		char16_t* to_next = nullptr;
-		std::use_facet<std::codecvt<char16_t, char8_t, mbstate_t>>(std::locale("chs")).in(mb,
+		std::use_facet<std::codecvt<char16_t, char8_t, mbstate_t>>(std::locale("C")).in(mb,
 			filename, filename + strlen(reinterpret_cast<const char*>(filename)), from_next,
 			path, path + MAX_PATH, to_next
 		);
+		std::use_facet<std::codecvt<char16_t, char8_t, mbstate_t>>(std::locale("C")).in(mb,
+			output, output + strlen(reinterpret_cast<const char*>(output)), 
+			from_next, out, out + MAX_PATH, to_next);
 	}
 
-	gen_bc3universal((const wchar_t*)path);
+	gen_bc3universal((const wchar_t*)path,(const wchar_t*)out);
 
 }
 
-bool ktexlib::v3::gen_bc3universal(const char16_t * path)
+bool ktexlib::v3::gen_bc3universal(const char16_t* path, const char16_t* outpath)
 {
-	return gen_bc3universal((const wchar_t*)path);
+	return gen_bc3universal((const wchar_t*)path,(const wchar_t*)outpath);
 }
 
-bool ktexlib::v3::gen_bc3universal(const wchar_t* path)
+bool ktexlib::v3::gen_bc3universal(const wchar_t* path, const wchar_t* outpath)
 {
 	DirectX::ScratchImage bc3_images;
 	{
 		DirectX::ScratchImage src;
 		DirectX::ScratchImage mipmap_chain;
 
-		if (FAILED(DirectX::LoadFromWICFile(path, DirectX::WIC_FLAGS_NONE, nullptr, src))) return false;
+		if (FAILED(DirectX::LoadFromWICFile(path, DirectX::WIC_FLAGS_NONE, nullptr, src)))
+			return false;
 
 		if (FAILED(DirectX::GenerateMipMaps(src.GetImages(), src.GetImageCount(),
-			src.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipmap_chain))) return false;
+			src.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipmap_chain)))
+			return false;
 
 		if (FAILED(DirectX::Compress(mipmap_chain.GetImages(), mipmap_chain.GetImageCount(), mipmap_chain.GetMetadata(),
 			DXGI_FORMAT_BC3_UNORM,
-			DirectX::TEX_COMPRESS_PARALLEL, 1.0f, bc3_images))) return false;
+			DirectX::TEX_COMPRESS_PARALLEL, 1.0f, bc3_images)))
+			return false;
 	}
 	auto dxmipmaps = bc3_images.GetImages();
 	size_t mipscount = bc3_images.GetImageCount();
@@ -82,8 +107,14 @@ bool ktexlib::v3::gen_bc3universal(const wchar_t* path)
 			Mipmap{ (uint32_t)dx.width, (uint32_t)dx.height, (uint32_t)dx.rowPitch, std::vector<uint8_t>(dx.pixels, dx.pixels + dx.slicePitch) }
 		);
 	}
-	std::filesystem::path outfile(path);
-	output.SaveFile(outfile.replace_extension(L".tex"));
+	std::filesystem::path outfile;
+	if (outpath != nullptr) outfile = outpath;
+	else
+	{
+		outfile = path;
+		outfile.replace_extension(L".tex");
+	}
+	output.SaveFile(outfile);
 	return true;
 
 }
