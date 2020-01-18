@@ -53,6 +53,7 @@ public:
 		}
 	}*/
 
+	void SetHelpMessage(const wchar_t* message);
 
 	void AddInteger(std::wstring name);
 	void AddString(std::wstring name);
@@ -70,6 +71,7 @@ public:
 	}*/
 private:
 	//std::vector<kv<kv<size_t>>> switches;
+	const wchar_t * helpmsg;
 	std::vector<kv<size_t>> integers;
 	std::vector<kv<std::wstring>> strings;
 };

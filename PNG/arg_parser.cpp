@@ -1,9 +1,15 @@
 #include "arg_parser.h"
 #include <utility>
+#include <iostream>
 using std::wstring;
 
 ArgumentParser::ArgumentParser()
 {
+}
+
+void ArgumentParser::SetHelpMessage(const wchar_t* message)
+{
+	helpmsg = message;
 }
 
 void ArgumentParser::AddInteger(std::wstring name)
@@ -35,6 +41,15 @@ const std::wstring& ArgumentParser::GetString(std::wstring name)
 
 void ArgumentParser::Parse(int argc, wchar_t** argv)
 {
+	using namespace std::string_literals;
+	if (argv[0] == L"/h"s || argv[0] == L"-h"s || argv[0] == L"/help"s || argv[0] == L"--help"s || argc == 1)
+	{
+		std::wcout << helpmsg << std::endl;
+		system("pause");
+		exit(0);
+	}
+
+
 	for (wchar_t **it =argv + 1;it != argv + argc;it++)
 	{
 #pragma warning(push)

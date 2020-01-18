@@ -10,6 +10,15 @@
 #include <wil/result.h>
 using std::wcout;
 
+wchar_t helpmsg[] = 
+L"帮助消息\n"
+"直接转换：mypng_v2 [输入图片路径] [输出tex路径]\n"
+"其他开关：/mode，用于选择其他工作模式\n"
+"                /path，输入\n"
+"                /out，输出tex路径"
+"";
+
+
 void gen_bc3_singlemip(ArgumentParser& parser)
 {
 	ktexlib::v3::init_COM_as_mthread();
@@ -46,7 +55,7 @@ void gen_bc3_singlemip(ArgumentParser& parser)
 		RgbaImage img;
 		decoded->GetSize(&img.width, &img.height);
 		img.pitch = ((img.width | 0xFFFFFFFC) + 4);
-		img.data.resize(img.pitch * img.height * 4);
+		img.data.resize((size_t)img.pitch * (size_t)img.height * (size_t)4);
 		hr = decoded->CopyPixels(nullptr, img.pitch, img.pitch * img.height * 4, img.data.data());
 		THROW_IF_FAILED_MSG(hr, "Copy Pixels");
 		auto mip = ktexlib::v3detail::convert(img);
@@ -81,6 +90,8 @@ int wmain(int argc, wchar_t** argv)
 		}
 	}
 	ArgumentParser parser;
+	parser.SetHelpMessage(helpmsg);
+
 	parser.AddString(L"path");
 	parser.AddString(L"mode");
 	parser.AddString(L"out");
