@@ -27,6 +27,8 @@ bool ktexlib::atlasv3::œ‡Ωª(boundry_box& a, boundry_box& b)
 std::vector<IWICBitmap*> ktexlib::atlasv3::«–Õº(std::filesystem::path ktex_path, std::vector<ktexlib::atlasv3::boundry_box>& bboxes)
 {
 	std::vector<IWICBitmap*> ret_val;
+	ret_val.reserve(bboxes.size());
+
 	HRESULT hr = S_OK;
 	if (!WICFactory)
 	{
@@ -34,12 +36,17 @@ std::vector<IWICBitmap*> ktexlib::atlasv3::«–Õº(std::filesystem::path ktex_path,
 		THROW_IF_FAILED_MSG(hr, "WIC Factory");
 	}
 
+	auto ktex = v3::load_ktex(ktex_path.c_str());
+	auto rgba = v3detail::decompress(ktex.Mipmaps[0], ktex.info.pixelFormat);
 
-
-	//IWICStream* in_pic
-	WICFactory->CreateBitmap()
+	wil::com_ptr<IWICBitmap> image;
+	hr = WICFactory->CreateBitmap(rgba.width, rgba.height, GUID_WICPixelFormat32bppRGBA, WICBitmapCacheOnLoad, &image);
+	THROW_IF_FAILED_MSG(hr, "wic image");
+	
 	for (auto& bbox : bboxes)
 	{
-
+		//WICFactory->CreateBitmapFromSourceRect(image.get())
 	}
+
+	return ret_val;
 }

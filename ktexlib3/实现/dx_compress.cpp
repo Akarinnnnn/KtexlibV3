@@ -13,9 +13,6 @@ DXGI_FORMAT dxfmt_from_pixf(PixelFormat fmt)
 	
 	switch (fmt)
 	{
-	case ktexlib::v3detail::PixelFormat::unknown:
-		throw std::invalid_argument("fmt == PixelFormat::unknown");
-		break;
 	case ktexlib::v3detail::PixelFormat::dxt1:
 		return DXGI_FORMAT_BC1_UNORM;
 		break;
@@ -32,7 +29,7 @@ DXGI_FORMAT dxfmt_from_pixf(PixelFormat fmt)
 
 }
 
-Mipmap ktexlib::v3detail::convert(const RgbaImage& image, bool multithread, PixelFormat fmt)
+Mipmap ktexlib::v3detail::convert(const RgbaImage& image, PixelFormat fmt, bool multithread)
 {
 	DXGI_FORMAT dxgi_fmt;
 	size_t row_pitch = 0;
@@ -89,7 +86,8 @@ RgbaImage ktexlib::v3detail::decompress(const Mipmap& mip,PixelFormat mipfmt)
 {
 	RgbaImage ret_val;
 
-	DirectX::Image in{ mip.width,mip.height,dxfmt_from_pixf(mipfmt),mip.pitch,mip.data.size()) };
+	DirectX::Image in{ mip.width,mip.height,dxfmt_from_pixf(mipfmt),mip.pitch,mip.data.size(),
+		const_cast<uint8_t*>(mip.data.data()) };
 	DirectX::ScratchImage out;
 	DirectX::Decompress(in, DXGI_FORMAT_R8G8B8A8_UNORM, out);
 

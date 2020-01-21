@@ -3,7 +3,7 @@
 #include <iostream>
 using std::wstring;
 
-ArgumentParser::ArgumentParser()
+ArgumentParser::ArgumentParser() :helpmsg(nullptr)
 {
 }
 
@@ -42,7 +42,7 @@ const std::wstring& ArgumentParser::GetString(std::wstring name)
 void ArgumentParser::Parse(int argc, wchar_t** argv)
 {
 	using namespace std::string_literals;
-	if (argv[0] == L"/h"s || argv[0] == L"-h"s || argv[0] == L"/help"s || argv[0] == L"--help"s || argc == 1)
+	if ((argv[0] == L"/h"s || argv[0] == L"-h"s || argv[0] == L"/help"s || argv[0] == L"--help"s || argc == 1) && helpmsg)
 	{
 		std::wcout << helpmsg << std::endl;
 		system("pause");

@@ -88,14 +88,12 @@ namespace ktexlib
 		/// </summary>
 		enum class PixelFormat :unsigned short
 		{
-			/// <summary>未知格式</summary>
-			unknown = 0,
 			/// <summary>bc1</summary>
-			dxt1 = 1,
+			dxt1 = 0,
 			/// <summary>bc2</summary>
-			dxt3 = 2,
+			dxt3 = 1,
 			/// <summary>最常用,bc3</summary>
-			dxt5 = 3,
+			dxt5 = 2,
 			/// <summary>高保真，大小很大</summary>
 			rgba = 4,
 			/// <summary>滤镜用的</summary>
@@ -141,7 +139,7 @@ namespace ktexlib
 			Mipmap(const uint32_t w, const uint32_t h, const uint32_t pitch, const std::vector<unsigned char>& data);
 			Mipmap(const uint32_t w, const uint32_t h, const uint32_t pitch, std::vector<unsigned char>&& data) noexcept;
 
-			uint32_t width, height, pitch = 0;//pitch是一行的数据长度，以字节为单位
+			uint16_t width, height, pitch = 0;//pitch是一行的数据长度，以字节为单位
 			std::vector<unsigned char> data;
 		};
 
@@ -191,7 +189,7 @@ namespace ktexlib
 		/// <returns></returns>
 		/// <created>Fa鸽,2019/12/28</created>
 		/// <changed>Fa鸽,2019/12/28</changed>
-		KTEXLIB3_EXPORT Mipmap convert(const RgbaImage& image, bool pararral = true, PixelFormat fmt = PixelFormat::dxt5);
+		KTEXLIB3_EXPORT Mipmap convert(const RgbaImage& image, PixelFormat fmt = PixelFormat::dxt5, bool pararral = true);
 
 		/// <summary>
 		/// 解压mipmap
@@ -202,6 +200,10 @@ namespace ktexlib
 		/// <created>Fa鸽,2020/1/21</created>
 		/// <changed>Fa鸽,2020/1/21</changed>
 		KTEXLIB3_EXPORT RgbaImage decompress(const Mipmap& Mipmap, PixelFormat fmt);
+
+		KTEXLIB3_EXPORT Ktex load_and_compress(std::filesystem::path path, PixelFormat fmt = PixelFormat::dxt5, bool gen_mips = false, bool pararral = true);
+
+		KTEXLIB3_EXPORT void filp(uint8_t * begin, uint8_t * end, size_t pitch);
 	}
 
 	namespace v3
@@ -238,7 +240,7 @@ namespace ktexlib
 		/// <returns></returns>
 		/// <created>Fa鸽,2019/11/23</created>
 		/// <changed>Fa鸽,2019/11/23</changed>
-		KTEXLIB3_EXPORT bool gen_bc3universal(const wchar_t * path, const wchar_t * outpath = nullptr);
+		KTEXLIB3_EXPORT bool gen_bc3universal(_In_ const wchar_t * path, _In_opt_ const wchar_t * outpath = nullptr);
 
 		/// <summary>
 		/// 加载一个tex文件

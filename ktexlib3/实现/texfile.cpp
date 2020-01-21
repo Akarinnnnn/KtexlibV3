@@ -29,6 +29,8 @@ constexpr inline unsigned int next_4n(unsigned int val)
 	return (val & 0xFFFFFFF8u) + 4;
 }
 
+DXGI_FORMAT dxfmt_from_pixf(PixelFormat fmt);
+
 HRESULT ktexlib::v3::init_COM_as_mthread()
 {
 	HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
@@ -76,37 +78,8 @@ bool ktexlib::v3::gen_bc3universal(const char16_t* path, const char16_t* outpath
 
 bool ktexlib::v3::gen_bc3universal(const wchar_t* path, const wchar_t* outpath)
 {
-	DirectX::ScratchImage bc3_images;
-	{
-		DirectX::ScratchImage src;
-		DirectX::ScratchImage mipmap_chain;
+	auto output = load_and_compress(path);
 
-		if (FAILED(DirectX::LoadFromWICFile(path, DirectX::WIC_FLAGS_NONE, nullptr, src)))
-			return false;
-
-		if (FAILED(DirectX::GenerateMipMaps(src.GetImages(), src.GetImageCount(),
-			src.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipmap_chain)))
-			return false;
-
-		if (FAILED(DirectX::Compress(mipmap_chain.GetImages(), mipmap_chain.GetImageCount(), mipmap_chain.GetMetadata(),
-			DXGI_FORMAT_BC3_UNORM,
-			DirectX::TEX_COMPRESS_PARALLEL, 1.0f, bc3_images)))
-			return false;
-	}
-	auto dxmipmaps = bc3_images.GetImages();
-	size_t mipscount = bc3_images.GetImageCount();
-
-	ktexlib::v3detail::Ktex output;
-	output.info.pixelFormat = v3detail::PixelFormat::dxt5;
-	output.info.platform = v3detail::Platform::universal;
-	output.info.textureType = v3detail::TextureType::d2;
-	for (size_t i = 0; i < mipscount; i++)
-	{
-		const DirectX::Image& dx = dxmipmaps[i];
-		output.AddMipmap(
-			Mipmap{ (uint32_t)dx.width, (uint32_t)dx.height, (uint32_t)dx.rowPitch, std::vector<uint8_t>(dx.pixels, dx.pixels + dx.slicePitch) }
-		);
-	}
 	std::filesystem::path outfile;
 	if (outpath != nullptr) outfile = outpath;
 	else
@@ -168,6 +141,51 @@ ktexlib::v3detail::Ktex ktexlib::v3::load_ktex(std::ifstream& file)
 
 	return ret;
 }
+
+Ktex ktexlib::v3detail::load_and_compress(std::filesystem::path path, PixelFormat fmt, bool gen_mips, bool pararral)
+{
+	Ktex ret_val;
+	DirectX::ScratchImage out_images;
+	{
+		DirectX::ScratchImage src;
+		DirectX::ScratchImage mipmap_chain;
+
+		THROW_IF_FAILED(DirectX::LoadFromWICFile(path.c_str(), DirectX::WIC_FLAGS_NONE, nullptr, src));
+
+		{
+			auto* img0 = src.GetImage(0, 0, 0);
+			v3detail::filp(img0->pixels, img0->pixels + img0->slicePitch, img0->rowPitch);
+		}
+
+		if (gen_mips)
+			THROW_IF_FAILED(DirectX::GenerateMipMaps(src.GetImages(), src.GetImageCount(),
+				src.GetMetadata(), DirectX::TEX_FILTER_DEFAULT, 0, mipmap_chain));
+			
+
+		THROW_IF_FAILED(DirectX::Compress(mipmap_chain.GetImages(), mipmap_chain.GetImageCount(), mipmap_chain.GetMetadata(),
+			dxfmt_from_pixf(fmt),
+			DirectX::TEX_COMPRESS_PARALLEL, 1.0f, out_images));
+	}
+
+	auto dxmipmaps = out_images.GetImages();
+	size_t mipscount = out_images.GetImageCount();
+
+	ktexlib::v3detail::Ktex ret;
+	ret.info.pixelFormat = v3detail::PixelFormat::dxt5;
+	ret.info.platform = v3detail::Platform::universal;
+	ret.info.textureType = v3detail::TextureType::d2;
+
+	for (size_t i = 0; i < mipscount; i++)
+	{
+		const DirectX::Image& dx = dxmipmaps[i];
+		ret.AddMipmap(
+			Mipmap{ (uint16_t)dx.width, (uint16_t)dx.height, (uint16_t)dx.rowPitch, std::vector<uint8_t>(dx.pixels, dx.pixels + dx.slicePitch) }
+		);
+	}
+	
+	return ret;
+}
+
 
 void ktexlib::v3detail::Ktex::AddMipmap(const Mipmap& mipmap)
 {
