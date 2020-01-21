@@ -1,9 +1,17 @@
 #pragma once
 
-#if defined(KTEXLIB3_EXPORTS) 
+#if defined(KTEXLIB3_EXPORTS)
+#if defined(_MSC_VER)	
 #define	KTEXLIB3_EXPORT __declspec(dllexport)
 #else
+#define KTEXLIB3_EXPORT
+#endif
+#else
+#if  defined(_MSC_VER)
 #define KTEXLIB3_EXPORT __declspec(dllimport)
+#else
+#define KTEXLIB3_EXPORT
+#endif
 #endif 
 
 #include <vector>
@@ -179,11 +187,21 @@ namespace ktexlib
 		/// </summary>
 		/// <param name="image"></param>
 		/// <param name="pararral">true多线程压缩，false单线程</param>
-		/// <param name="fmt"></param>
+		/// <param name="fmt">目的像素格式</param>
 		/// <returns></returns>
 		/// <created>Fa鸽,2019/12/28</created>
 		/// <changed>Fa鸽,2019/12/28</changed>
 		KTEXLIB3_EXPORT Mipmap convert(const RgbaImage& image, bool pararral = true, PixelFormat fmt = PixelFormat::dxt5);
+
+		/// <summary>
+		/// 解压mipmap
+		/// </summary>
+		/// <param name="Mipmap"></param>
+		/// <param name="fmt">mipmap像素格式</param>
+		/// <returns></returns>
+		/// <created>Fa鸽,2020/1/21</created>
+		/// <changed>Fa鸽,2020/1/21</changed>
+		KTEXLIB3_EXPORT RgbaImage decompress(const Mipmap& Mipmap, PixelFormat fmt);
 	}
 
 	namespace v3

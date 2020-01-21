@@ -111,6 +111,7 @@ int wmain(int argc, wchar_t** argv)
 			using namespace std;
 			cout << "err\n\tHRESULT = " << hex << e.GetErrorCode() << " MSG:" << dec;
 			wcout << e.GetFailureInfo().pszMessage << endl;
+			return 2;
 		}
 		catch (const std::exception & e)
 		{

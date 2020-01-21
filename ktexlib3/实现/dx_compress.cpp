@@ -8,30 +8,38 @@
 using namespace ktexlib::v3detail;
 using DirectX::Image;
 
-Mipmap ktexlib::v3detail::convert(const RgbaImage& image, bool multithread, PixelFormat fmt)
+DXGI_FORMAT dxfmt_from_pixf(PixelFormat fmt)
 {
-	DXGI_FORMAT dxgi_fmt;
-	size_t row_pitch = 0;
-	size_t slice_pitch = 0;
-
+	
 	switch (fmt)
 	{
 	case ktexlib::v3detail::PixelFormat::unknown:
 		throw std::invalid_argument("fmt == PixelFormat::unknown");
 		break;
 	case ktexlib::v3detail::PixelFormat::dxt1:
-		dxgi_fmt = DXGI_FORMAT_BC1_UNORM;
+		return DXGI_FORMAT_BC1_UNORM;
 		break;
 	case ktexlib::v3detail::PixelFormat::dxt3:
-		dxgi_fmt = DXGI_FORMAT_BC3_UNORM;
+		return DXGI_FORMAT_BC3_UNORM;
 		break;
 	case ktexlib::v3detail::PixelFormat::dxt5:
-		dxgi_fmt = DXGI_FORMAT_BC3_UNORM;
+		return DXGI_FORMAT_BC3_UNORM;
 		break;
-	case ktexlib::v3detail::PixelFormat::rgba:
-		return image;
+	default:
+		throw std::invalid_argument("所选格式不在可选范围内");
 		break;
-	case ktexlib::v3detail::PixelFormat::r8g8b8:
+	}
+
+}
+
+Mipmap ktexlib::v3detail::convert(const RgbaImage& image, bool multithread, PixelFormat fmt)
+{
+	DXGI_FORMAT dxgi_fmt;
+	size_t row_pitch = 0;
+	size_t slice_pitch = 0;
+
+	dxgi_fmt = dxfmt_from_pixf(fmt);
+	if(fmt == ktexlib::v3detail::PixelFormat::r8g8b8)
 	{
 		Mipmap retmip{ image.width,image.height,image.pitch };
 		auto size = image.data.size();
@@ -41,11 +49,7 @@ Mipmap ktexlib::v3detail::convert(const RgbaImage& image, bool multithread, Pixe
 				retmip.data.push_back(image.data[i]);
 		return retmip;
 	}
-	break;
-	default:
-		throw std::invalid_argument("所选格式不在可选范围内");
-		break;
-	}
+	if (fmt == PixelFormat::rgba) return image;
 
 	if (image.pitch == 0) DirectX::ComputePitch(dxgi_fmt, image.width, image.height, row_pitch, slice_pitch);
 
@@ -78,5 +82,23 @@ Mipmap ktexlib::v3detail::convert(const RgbaImage& image, bool multithread, Pixe
 		std::vector<unsigned char>
 		(out.GetPixels(),out.GetPixels() + out.GetPixelsSize())
 	};
+	return ret_val;
+}
+
+RgbaImage ktexlib::v3detail::decompress(const Mipmap& mip,PixelFormat mipfmt)
+{
+	RgbaImage ret_val;
+
+	DirectX::Image in{ mip.width,mip.height,dxfmt_from_pixf(mipfmt),mip.pitch,mip.data.size()) };
+	DirectX::ScratchImage out;
+	DirectX::Decompress(in, DXGI_FORMAT_R8G8B8A8_UNORM, out);
+
+	auto* img = out.GetImage(0, 0, 0);
+	ret_val.width = mip.width;
+	ret_val.height = mip.height;
+	ret_val.pitch = img->rowPitch;
+	ret_val.data.reserve(img->slicePitch);
+	ret_val.data.assign(img->pixels, img->pixels + img->slicePitch);
+
 	return ret_val;
 }

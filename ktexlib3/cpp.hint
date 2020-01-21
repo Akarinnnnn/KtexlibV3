@@ -4,3 +4,6 @@
 #define KTEXLIB3_EXPORT __declspec(dllexport)
 #define KTEXLIB3_EXPORT __declspec(dllimport)
 #define KTEXLIB3_EXPORT
+#define KTEXLIB3_EXPORT __declspec(dllexport)
+#define KTEXLIB3_EXPORT __declspec(dllimport)
+#define KTEXLIB3_EXPORT
