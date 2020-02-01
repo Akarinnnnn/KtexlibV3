@@ -30,8 +30,11 @@ namespace ktexlib
 			float x = 0.0f, y = 0.0f;
 		};
 
-		bool Ïà½»(boundry_box& a, boundry_box& b);
+		bool KTEXLIB3_EXPORT Intersects(boundry_box& a, boundry_box& b);
 
-		std::vector<IWICBitmap*> ÇÐÍ¼(std::filesystem::path Â·¾¶, std::vector<boundry_box>& bboxes);
+		std::vector<IWICBitmap*> KTEXLIB3_EXPORT CutImage(std::filesystem::path filepath, std::vector<boundry_box>& bboxes);
+		IWICBitmapFrameDecode* KTEXLIB3_EXPORT LoadWICImage(std::filesystem::path& filepath);
+		
+		IWICBitmap* KTEXLIB3_EXPORT MergeImages(std::vector<IWICBitmapSource*>& images, std::vector<boundry_box>& bboxes);
 	}
 }
