@@ -5,10 +5,6 @@
 #include <wil/com.h>
 
 
-namespace wicobj
-{
-	wil::com_ptr<IWICImagingFactory> factory;
-}
 
 BOOL APIENTRY DllMain( HMODULE hModule,
                        DWORD  ul_reason_for_call,
@@ -21,7 +17,8 @@ BOOL APIENTRY DllMain( HMODULE hModule,
     {
     case DLL_PROCESS_ATTACH:
 	{
-	}
+
+   	}
 		break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:

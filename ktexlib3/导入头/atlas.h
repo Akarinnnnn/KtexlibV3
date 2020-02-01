@@ -30,7 +30,6 @@ namespace ktexlib
 			float x = 0.0f, y = 0.0f;
 		};
 
-		bool KTEXLIB3_EXPORT Intersects(boundry_box& a, boundry_box& b);
 
 		std::vector<IWICBitmap*> KTEXLIB3_EXPORT CutImage(std::filesystem::path filepath, std::vector<boundry_box>& bboxes);
 		IWICBitmapFrameDecode* KTEXLIB3_EXPORT LoadWICImage(std::filesystem::path& filepath);
