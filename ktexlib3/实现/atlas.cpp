@@ -239,15 +239,67 @@ IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<IWICBitmapSource*>& images
 	return ret;
 }
 
+/// <summary>
+/// 拼图函数，bboxes参数传入一个vector来接收拼图结果
+/// </summary>
+/// <param name="folder">存放待拼png文件的文件夹</param>
+/// <param name="bboxes">接收拼图结果</param>
+/// <returns></returns>
+/// <example>
+/// <code>
+/// std::vector{boundry_box} out_bboxes;
+/// IWICBitmap* image = MergeImages(folder, out_bboxes);
+/// </code>
+/// </example>
+/// <exception cref="wil::ResultException"/>
+/// <exception cref="std::bad_alloc"/>
+/// <created>Fa鸽,2020/1/31</created>
+/// <changed>Fa鸽,2020/1/31</changed>
 IWICBitmap* ktexlib::atlasv3::MergeImages(std::filesystem::path folder, std::vector<boundry_box>& bboxes)
 {
-	return nullptr;
+	using namespace std;
+	using namespace filesystem;
+	vector<path> pathes;
+	for (auto& ent : directory_iterator(folder))
+	{
+		if (ent.is_regular_file())
+		{
+			auto& path = ent.path();
+			if (path.extension() == L".png")
+				pathes.push_back(path);
+		}
+	}
+	return MergeImages(pathes, bboxes);
 }
 
-
-IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<std::filesystem::path>& image_pathes, std::vector<boundry_box>& bboxes);
+/// <summary>
+/// 拼图函数，bboxes参数传入一个vector来接收拼图结果
+/// </summary>
+/// <param name="image_pathes"></param>
+/// <param name="bboxes">接收拼图结果</param>
+/// <returns></returns>
+/// <example>
+/// <code>
+/// std::vector{boundry_box} out_bboxes;
+/// IWICBitmap* image = MergeImages(pathes, out_bboxes);
+/// </code>
+/// </example>
+/// <exception cref="wil::ResultException"/>
+/// <exception cref="std::bad_alloc"/>
+/// <created>Fa鸽,2020/1/31</created>
+/// <changed>Fa鸽,2020/1/31</changed>
+IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<std::filesystem::path>& image_pathes, std::vector<boundry_box>& bboxes)
 {
+	std::vector<IWICBitmapSource*> imgs;
+	for (auto& imgpath : image_pathes)
+		imgs.push_back(LoadWICImage(imgpath));
 
+	auto ret = MergeImages(imgs, bboxes);
+
+	for (auto* img : imgs)
+		img->Release();
+
+	return ret;
 }
 
 
