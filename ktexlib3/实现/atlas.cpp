@@ -68,25 +68,51 @@ IWICBitmapFrameDecode* ktexlib::atlasv3::LoadWICImage(std::filesystem::path& fil
 	THROW_IF_FAILED_MSG(hr, "get frame");
 }
 
-void check_and_draw(D2D1_RECT_F& current, std::vector<ktexlib::atlasv3::boundry_box>& bboxes, wil::com_ptr<ID2D1RenderTarget>& rt, wil::com_ptr<ID2D1Bitmap>& d2dbmp, size_t& i)
+
+
+void Draw(ID2D1RenderTarget* rt, ID2D1Bitmap* bmp, D2D_RECT_F& rect, size_t& i)
+{
+	rt->DrawBitmap(
+		bmp, rect, 1,
+		D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
+	i++;
+}
+
+ktexlib::atlasv3::boundry_box d2drect2bbox(D2D_RECT_F& rect)
+{
+	return ktexlib::atlasv3::boundry_box{
+	rect.right - rect.left,rect.bottom - rect.top,
+	rect.left,rect.top
+	};
+}
+
+bool check_and_draw2(ID2D1RenderTarget* rt, ID2D1Bitmap* bmp, std::vector<ktexlib::atlasv3::boundry_box>& bboxes,
+	D2D1_RECT_F& current)
 {
 	auto curbbox = d2drect2bbox(current);
 	bool dodraw = true;
 
 	for (auto& bbox : bboxes)
 	{
-		if (Intersects(bbox, curbbox))
+		if (!Intersects(bbox, curbbox))
 		{
-			dodraw = false;
-			break;
+			rt->DrawBitmap(bmp, current);
+			bboxes.push_back(curbbox);
+			return true;
 		}
 	}
 
-	if (dodraw)
-	{
-		Draw(rt.get(), d2dbmp.get(), current, i);
-		bboxes.push_back(d2drect2bbox(current));
-	}
+	return false;
+}
+
+D2D1_RECT_F bbox2dxrect(ktexlib::atlasv3::boundry_box& lastbbox)
+{
+	D2D1_RECT_F lastrect;
+	lastrect.top = lastbbox.y;
+	lastrect.bottom = lastbbox.y + lastbbox.h;
+	lastrect.left = lastbbox.x;
+	lastrect.right = lastbbox.w;
+	return lastrect;
 }
 
 /// <summary>
@@ -136,75 +162,85 @@ IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<IWICBitmapSource*>& images
 	com_ptr<ID2D1RenderTarget> rt;
 	D2DFactory->CreateWicBitmapRenderTarget(ret,
 		D2D1::RenderTargetProperties(
-			D2D1_RENDER_TARGET_TYPE_DEFAULT, 
+			D2D1_RENDER_TARGET_TYPE_DEFAULT,
 			D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
 			0.0f, 0.0f,
 			D2D1_RENDER_TARGET_USAGE_FORCE_BITMAP_REMOTING),
 		&rt
 	);
 	hrthrow("create render target");
-
+	std::ofstream log("MergeImage.log", std::ios::app | std::ios::out);
 	//D2D1_RECT_F last;
-	char dir = 0;//0,1,2,3 上 下 左 右
 	rt->BeginDraw();
-	for (size_t i = 0; i < images.size();)
+
+	D2D_RECT_F lastrect;
+	for (auto* img : images)
 	{
-		auto img = images.at(i);
 		boundry_box bbox{};
 		img->GetSize(&bbox.w, &bbox.h);
 
 		com_ptr<ID2D1Bitmap> d2dbmp;
 		hr = rt->CreateBitmapFromWicBitmap(img, &d2dbmp);
-		THROW_IF_FAILED_MSG(hr, "d2d bitmap form wic, i = %u", i);
-		{
-			D2D1_RECT_F current;
-			auto size = d2dbmp->GetSize();
-			switch (dir)//0,1,2,3 上 下 左 右
+		THROW_IF_FAILED_MSG(hr, "d2d bitmap form wic");
+		try {
+			while (true)
 			{
-			case 0:
-				current.bottom += size.height;
-				current.top += size.height;
-				current.left += size.width;
-				current.right += size.width;
-				check_and_draw(current, bboxes, rt, d2dbmp, i);
-				dir = 1;
-				break;
-			case 1:
-				dir = 2;
-				break;
-			case 2 :
-				dir = 3;
-				break;
-			case 3:
-				dir = 0;
-				break;
-			default:
-				abort();
+				D2D1_RECT_F current_rect = D2D1::RectF();
+				if (!bboxes.empty())
+				{
+					auto& lastbbox = bboxes.back();
+					current_rect = bbox2dxrect(lastbbox);
+				}
+				auto size = d2dbmp->GetSize();
+				char dir = 0;//0,1,2,3 上 下 左 右
+				size_t insert_index = 0;
+				switch (dir)
+				{
+				case 0:
+					current_rect.bottom += size.height;
+					current_rect.top += size.height += (current_rect.bottom - current_rect.top);
+					//last = cur
+					if (!check_and_draw2(rt.get(), d2dbmp.get(), bboxes, current_rect))
+						dir = 1;
+					break;
+				case 1:
+					current_rect.bottom -= size.height;
+					current_rect.top -= size.height -= (current_rect.bottom - current_rect.top);
+					if (!check_and_draw2(rt.get(), d2dbmp.get(), bboxes, current_rect))
+						dir = 2;
+					break;
+				case 2:
+					current_rect.left -= size.width;
+					current_rect.right -= size.width;
+					if (!check_and_draw2(rt.get(), d2dbmp.get(), bboxes, current_rect))
+						dir = 3;
+					break;
+				case 3:
+					current_rect.left += size.width;
+					current_rect.right += size.width;
+					if (!check_and_draw2(rt.get(), d2dbmp.get(), bboxes, current_rect))
+						dir = 0;
+					break;
+				default:
+					dir = 0;
+					current_rect = bbox2dxrect(bboxes.at(insert_index));
+					insert_index++;
+					break;
+				}
 			}
+		}
+		catch (const std::out_of_range&)
+		{
+			log << "INSERT IMAGE FAILED at image" << bboxes.size() + 1;
+			break;
 		}
 	}
 	rt->EndDraw();
-
-	//rt->CreateBitmap
 	return ret;
 }
 
-void Draw(ID2D1RenderTarget* rt, ID2D1Bitmap* bmp, D2D_RECT_F& rect,size_t& i)
-{
-	rt->DrawBitmap(
-		bmp, rect, 1,
-		D2D1_BITMAP_INTERPOLATION_MODE_LINEAR);
-	i++;
-}
 
-ktexlib::atlasv3::boundry_box d2drect2bbox(D2D_RECT_F& rect)
-{
-	return ktexlib::atlasv3::boundry_box {
-	rect.right - rect.left,rect.bottom - rect.top,
-	rect.left,rect.top
-	};
 
-}
 
 /// <summary>
 /// 切图函数
