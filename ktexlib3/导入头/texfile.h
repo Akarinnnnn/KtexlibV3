@@ -19,6 +19,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <combaseapi.h>
+#include <memory>
 
 namespace ktexlib
 {
@@ -32,53 +33,6 @@ namespace ktexlib
 
 		iter_beg begin() { return _begin; }
 		iter_end end() { return _end; }
-	};
-
-	template<typename T,typename array_t>
-	struct KTEXLIB3_EXPORT ro_container_property
-	{
-		ro_container_property(const array_t& arr):arr(arr) {}
-
-		const T& operator() (size_t i)
-		{
-			return (arr)[i];
-		}
-
-		const T& operator[] (size_t i)
-		{
-			return (arr)[i];
-		}
-
-		const size_t size()
-		{
-			return arr.size();
-		}
-
-		auto begin() { return cbegin(); }
-		auto end() { return cend(); }
-		auto cbegin() { return arr.cbegin(); }
-		auto cend() { return arr.cend(); }
-	private:
-		const array_t& arr;
-	};
-
-	template<typename T>
-	struct KTEXLIB3_EXPORT ro_property
-	{
-		ro_property(T& val) :val(val)
-		{
-
-		}
-
-		operator T()
-		{
-			return val;
-		}
-		T operator() ()
-		{
-			return val;
-		}
-		T& val;
 	};
 
 	namespace v3detail
@@ -136,11 +90,20 @@ namespace ktexlib
 			Mipmap(const Mipmap& other);
 			Mipmap(Mipmap&& xval) noexcept;
 
+			Mipmap& operator=(const Mipmap& other)
+			{
+				new(this)Mipmap(other);
+				return *this;
+			}
 			Mipmap(const uint32_t w, const uint32_t h, const uint32_t pitch, const std::vector<unsigned char>& data);
 			Mipmap(const uint32_t w, const uint32_t h, const uint32_t pitch, std::vector<unsigned char>&& data) noexcept;
 
 			uint16_t width, height, pitch = 0;//pitch是一行的数据长度，以字节为单位
+#pragma warning(push)
+#pragma warning (disable:4251)
 			std::vector<unsigned char> data;
+#pragma warning(pop)
+
 		};
 
 		struct RgbaImage : Mipmap
@@ -162,21 +125,28 @@ namespace ktexlib
 		class KTEXLIB3_EXPORT Ktex
 		{
 		public:
-			Ktex() :Mipmaps(this->mips) {}
+			Ktex() = default;
 
 			template<typename mips_iterator>
-			Ktex(mips_iterator begin, mips_iterator end): mips(begin, end),Mipmaps(this->mips) {}
+			Ktex(mips_iterator begin, mips_iterator end): mips(begin, end) {}
 
 			void AddMipmap(const Mipmap& mipmap);
 			void AddMipmap(Mipmap&& mipmap);
 
-			ro_container_property<Mipmap, std::vector<Mipmap>> Mipmaps;
-			
+			using const_iterator = std::vector<Mipmap>::const_iterator;
+			using iterator = const_iterator;
+			iterator begin();
+			iterator end();
+			const Mipmap& operator[] (size_t i);
+
 			KTEXInfo info;
 
 			void SaveFile(std::filesystem::path path);
 		private:
+#pragma warning(push)
+#pragma warning (disable:4251)
 			std::vector<Mipmap> mips;
+#pragma warning(pop)
 
 		};
 
@@ -272,7 +242,10 @@ namespace ktexlib
 		/// <changed>Fa鸽,2019/11/23</changed>
 		KTEXLIB3_EXPORT ktexlib::v3detail::Ktex load_ktex(std::ifstream& file);
 
-		class KTEXLIB3_EXPORT invalid_mipschain: public std::logic_error
+#pragma warning(push)
+#pragma warning (disable:4275)
+		class KTEXLIB3_EXPORT invalid_mipschain : public std::logic_error
+#pragma warning(pop)
 		{
 		public:
 			invalid_mipschain(const char* message = "mipmap链各节点间大小不合规"):std::logic_error(message) {}

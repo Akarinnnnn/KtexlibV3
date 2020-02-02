@@ -5,7 +5,7 @@
 #include "arg_parser.h"
 #include <wincodec.h>
 #include "MAIN.h"
-#include <wil/result.h>
+#include <wil/com.h>
 #include <DirectXTex.h>
 using std::wcout;
 
@@ -32,6 +32,44 @@ void gen_bc3_singlemip(ArgumentParser& parser)
 	ktex.SaveFile(outpath);
 }
 
+void ktex2png(ArgumentParser& parser)
+{
+	ktexlib::v3::init_COM_as_mthread();
+
+	auto ktex = ktexlib::v3::load_ktex(parser.GetString(L"path").c_str());
+	ktexlib::v3detail::RgbaImage out = ktexlib::v3detail::decompress(ktex[0], ktex.info.pixelFormat);
+
+	bool iswic2 = false;
+	auto wicfactory = DirectX::GetWICFactory(iswic2);
+
+	wil::com_ptr<IWICBitmap> wic_bmp;
+	THROW_IF_FAILED_MSG(wicfactory->CreateBitmapFromMemory(
+		out.width, out.height, GUID_WICPixelFormat32bppRGBA,
+		out.pitch, out.data.size(), out.data.data(),
+		&wic_bmp), "create wic bmp");
+
+	wil::com_ptr<IWICStream> stream;
+	THROW_IF_FAILED_MSG(wicfactory->CreateStream(&stream), "Create wic stream");
+
+	auto outpath = parser.GetString(L"out");
+	if (outpath[0] == L'\0')
+		outpath = std::filesystem::path(parser.GetString(L"path")).replace_extension(L".png");
+
+	THROW_IF_FAILED_MSG(stream->InitializeFromFilename(outpath.c_str(), GENERIC_WRITE), "init out stream");
+
+	wil::com_ptr<IWICBitmapEncoder> encoder;
+	THROW_IF_FAILED_MSG(wicfactory->CreateEncoder(GUID_ContainerFormatPng, nullptr, &encoder), "create encoder");
+	THROW_IF_FAILED_MSG(encoder->Initialize(stream.get(), WICBitmapEncoderNoCache), "init encoder");
+
+	wil::com_ptr<IWICBitmapFrameEncode> encode;
+	THROW_IF_FAILED_MSG(encoder->CreateNewFrame(&encode, nullptr), "create frame");
+	THROW_IF_FAILED_MSG(encode->Initialize(nullptr), "init frame");
+
+	THROW_IF_FAILED_MSG(encode->WriteSource(wic_bmp.get(), nullptr), "write frame");
+	THROW_IF_FAILED_MSG(encode->Commit(), "frame commit");
+	THROW_IF_FAILED_MSG(encoder->Commit(), "encoder commit");
+	
+}
 #if 1
 int wmain(int argc, wchar_t** argv)
 {
@@ -91,6 +129,21 @@ int wmain(int argc, wchar_t** argv)
 			return 2;
 		}
 	}
+
+	if (mode == L"topng" || mode == L"d")
+	{
+		try
+		{
+			ktex2png(parser);
+		}
+		catch (const std::exception& e)
+		{
+			std::cout << e.what() << std::endl;
+			CoUninitialize();
+			return 2;
+		}
+	}
+
 	CoUninitialize();
 	return 999;
 }

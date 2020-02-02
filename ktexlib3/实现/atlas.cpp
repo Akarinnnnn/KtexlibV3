@@ -37,7 +37,7 @@ std::vector<IWICBitmap*> ktexlib::atlasv3::ÇÐÍ¼(std::filesystem::path ktex_path,
 	}
 
 	auto ktex = v3::load_ktex(ktex_path.c_str());
-	auto rgba = v3detail::decompress(ktex.Mipmaps[0], ktex.info.pixelFormat);
+	auto rgba = v3detail::decompress(ktex[0], ktex.info.pixelFormat);
 
 	wil::com_ptr<IWICBitmap> image;
 	hr = WICFactory->CreateBitmap(rgba.width, rgba.height, GUID_WICPixelFormat32bppRGBA, WICBitmapCacheOnLoad, &image);
