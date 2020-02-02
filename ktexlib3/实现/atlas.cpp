@@ -239,7 +239,16 @@ IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<IWICBitmapSource*>& images
 	return ret;
 }
 
+IWICBitmap* ktexlib::atlasv3::MergeImages(std::filesystem::path folder, std::vector<boundry_box>& bboxes)
+{
+	return nullptr;
+}
 
+
+IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<std::filesystem::path>& image_pathes, std::vector<boundry_box>& bboxes);
+{
+
+}
 
 
 /// <summary>
@@ -292,5 +301,20 @@ std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(std::filesystem::path filepa
 	}
 
 	return ret_val;
+}
+
+std::vector<ktexlib::atlasv3::boundry_box> LoadAtlas(std::filesystem::path atlaspath)
+{
+
+}
+
+std::vector<ktexlib::atlasv3::boundry_box> LoadBuild(std::filesystem::path buildpath)
+{
+
+}
+
+std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(std::filesystem::path filepath, std::filesystem::path atlas_or_build)
+{
+	return std::vector<IWICBitmap*>();
 }
 
