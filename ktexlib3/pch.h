@@ -13,7 +13,7 @@
 void ErrorMsgbox(const wchar_t* format, const HRESULT hr, int exitcode);
 namespace wicobj
 {
-	wil::com_ptr<IWICImagingFactory> factory;
+	extern wil::com_ptr<IWICImagingFactory> factory;
 }
 
 

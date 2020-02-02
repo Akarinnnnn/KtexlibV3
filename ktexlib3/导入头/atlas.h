@@ -31,13 +31,13 @@ namespace ktexlib
 		};
 
 
-		std::vector<IWICBitmap*> KTEXLIB3_EXPORT CutImage(std::filesystem::path filepath, std::vector<boundry_box>& bboxes);
-		std::vector<IWICBitmap*> KTEXLIB3_EXPORT CutImage(std::filesystem::path filepath, std::filesystem::path atlas_or_build);
+		KTEXLIB3_EXPORT std::vector<IWICBitmap*> CutImage(std::filesystem::path filepath, std::vector<boundry_box>& bboxes);
+		KTEXLIB3_EXPORT std::vector<IWICBitmap*> CutImage(std::filesystem::path filepath, std::filesystem::path atlas_or_build);
 
-		IWICBitmapFrameDecode* KTEXLIB3_EXPORT LoadWICImage(std::filesystem::path& filepath);
+		KTEXLIB3_EXPORT IWICBitmapFrameDecode* LoadWICImage(std::filesystem::path& filepath);
 		
-		IWICBitmap* KTEXLIB3_EXPORT MergeImages(std::vector<IWICBitmapSource*>& images, std::vector<boundry_box>& bboxes);
-		IWICBitmap* KTEXLIB3_EXPORT MergeImages(std::vector<std::filesystem::path>& image_pathes, std::vector<boundry_box>& bboxes);
-		IWICBitmap* KTEXLIB3_EXPORT MergeImages(std::filesystem::path folder, std::vector<boundry_box>& bboxes);
+		KTEXLIB3_EXPORT IWICBitmap* MergeImages(std::vector<IWICBitmapSource*>& images, std::vector<boundry_box>& bboxes);
+		KTEXLIB3_EXPORT IWICBitmap* MergeImages(std::vector<std::filesystem::path>& image_pathes, std::vector<boundry_box>& bboxes);
+		KTEXLIB3_EXPORT IWICBitmap* MergeImages(std::filesystem::path folder, std::vector<boundry_box>& bboxes);
 	}
 }

@@ -4,6 +4,7 @@
 #include <wil/result.h>
 #include "../µº»ÎÕ∑/texfile.h"
 #include <d2d1.h>
+#include <KleiAnim/Binary.hpp>
 
 using wil::com_ptr;
 static wil::com_ptr<ID2D1Factory> D2DFactory;
@@ -63,9 +64,11 @@ IWICBitmapFrameDecode* ktexlib::atlasv3::LoadWICImage(std::filesystem::path& fil
 		WICDecodeMetadataCacheOnLoad, &decoder);
 	THROW_IF_FAILED_MSG(hr, "create decoder");
 
-	com_ptr<IWICBitmapFrameDecode> frame;
+	IWICBitmapFrameDecode* frame;
 	hr = decoder->GetFrame(0, &frame);
 	THROW_IF_FAILED_MSG(hr, "get frame");
+
+	return frame;
 }
 
 
@@ -81,7 +84,7 @@ void Draw(ID2D1RenderTarget* rt, ID2D1Bitmap* bmp, D2D_RECT_F& rect, size_t& i)
 ktexlib::atlasv3::boundry_box d2drect2bbox(D2D_RECT_F& rect)
 {
 	return ktexlib::atlasv3::boundry_box{
-	rect.right - rect.left,rect.bottom - rect.top,
+	(uint32_t)(rect.right - rect.left),(uint32_t)(rect.bottom - rect.top),
 	rect.left,rect.top
 	};
 }
@@ -354,7 +357,7 @@ std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(std::filesystem::path filepa
 
 	return ret_val;
 }
-
+/*
 std::vector<ktexlib::atlasv3::boundry_box> LoadAtlas(std::filesystem::path atlaspath)
 {
 
@@ -363,7 +366,7 @@ std::vector<ktexlib::atlasv3::boundry_box> LoadAtlas(std::filesystem::path atlas
 std::vector<ktexlib::atlasv3::boundry_box> LoadBuild(std::filesystem::path buildpath)
 {
 
-}
+}*/
 
 std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(std::filesystem::path filepath, std::filesystem::path atlas_or_build)
 {

@@ -15,7 +15,7 @@
 using std::cout, std::endl;
 namespace wicobj
 {
-	extern wil::com_ptr<IWICImagingFactory> factory;
+	wil::com_ptr<IWICImagingFactory> factory;
 }
 
 using namespace ktexlib::v3detail;
