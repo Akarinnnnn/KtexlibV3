@@ -315,7 +315,7 @@ IWICBitmapSource* LoadWICImage(std::filesystem::path& filepath)
 	if (filepath.extension() == L".tex")
 	{
 		auto ktex = v3::load_ktex(filepath.c_str());
-		auto rgba = v3detail::decompress(ktex.Mipmaps[0], ktex.info.pixelFormat);
+		auto rgba = v3detail::decompress(ktex[0], ktex.info.pixelFormat);
 
 		if (rgba.pitch == 0) rgba.pitch = rgba.width * 4;
 		v3detail::filp(rgba.data._Unchecked_begin(), rgba.data._Unchecked_end(), rgba.pitch);
@@ -432,13 +432,15 @@ void  frame2xywh(pugi::xml_node_iterator& frame, float& x, float& y, uint32_t& w
 			for (uint32_t i = 1; framecur != frameend; ++framecur)
 			{
 				bboxes.push_back(ktexlib::atlasv3::boundry_box {
-					framecur->w,framecur->h,
+					(uint32_t)framecur->w,(uint32_t)framecur->h,
 					framecur->x,framecur->y
 				});
 				names.push_back(build.de_hash(sym.name_hash) + "_" + std::to_string(i));
 			}
 		}
 	}
+
+	return names;
 }
 
 /// <summary>

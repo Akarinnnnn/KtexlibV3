@@ -16,6 +16,9 @@
     <Filter Include="源文件\第三方">
       <UniqueIdentifier>{a0bab4f1-6a51-4f26-818b-5649d4b7d399}</UniqueIdentifier>
     </Filter>
+    <Filter Include="头文件\导出">
+      <UniqueIdentifier>{2139faaf-07b1-4699-a0b8-0b3df7753cf0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -25,10 +28,10 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="导入头\texfile.h">
-      <Filter>头文件</Filter>
+      <Filter>头文件\导出</Filter>
     </ClInclude>
     <ClInclude Include="导入头\atlas.h">
-      <Filter>头文件</Filter>
+      <Filter>头文件\导出</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -54,5 +57,6 @@
   <ItemGroup>
     <None Include="cpp.hint" />
     <None Include="packages.config" />
+    <None Include="KtexlibV3.nuspec" />
   </ItemGroup>
 </Project>

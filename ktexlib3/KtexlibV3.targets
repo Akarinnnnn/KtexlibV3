@@ -1,0 +1,25 @@
+﻿<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<!-- general -->
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+		</ClCompile>
+
+		<Link>
+			<AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)$(Configuration)_$(platformshortname)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+			<AdditionalDependencies>$(MSBuildThisFileDirectory)$(Configuration)_$(platformshortname)\klei_anim.lib;%(AdditionalDependencies)</AdditionalDependencies>
+		</Link>
+	</ItemDefinitionGroup>
+
+	<Target Name="Copy Ktexlibv3 DLL" AfterTargets="AfterBuild" >
+		<ItemGroup>
+			<__ToCopy Include="$(MSBuildThisFileDirectory)$(Configuration)_$(platformshortname)\**" />
+		</ItemGroup>
+		<Copy Sourcefiles="@(__ToCopy)"
+			  DestinationFolder="$(TargetDir)" SkipUnchangedFiles="true" />
+	</Target>
+</Project>
+<!--————————————————
+版权声明：本文为CSDN博主「china_jeffery」的原创文章，遵循 CC 4.0 BY-SA 版权协议，转载请附上原文出处链接及本声明。
+原文链接：https://blog.csdn.net/china_jeffery/article/details/86247494-->
