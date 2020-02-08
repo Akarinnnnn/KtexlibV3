@@ -24,21 +24,21 @@ namespace ktexlib
 {
 	namespace atlasv3
 	{
-		struct boundry_box
+		struct bounding_box
 		{
 			unsigned int w = 0, h = 0;
 			float x = 0.0f, y = 0.0f;
 		};
 
 
-		KTEXLIB3_EXPORT [[nodiscard]] std::vector<IWICBitmap*> CutImage(std::filesystem::path filepath, std::vector<boundry_box>& bboxes);
-		KTEXLIB3_EXPORT [[nodiscard]] std::vector<IWICBitmap*> CutImage(IWICBitmapSource* image, std::vector<boundry_box>& bboxes);
+		KTEXLIB3_EXPORT [[nodiscard]] std::vector<IWICBitmap*> CutImage(std::filesystem::path filepath, std::vector<bounding_box>& bboxes);
+		KTEXLIB3_EXPORT [[nodiscard]] std::vector<IWICBitmap*> CutImage(IWICBitmapSource* image, std::vector<bounding_box>& bboxes);
 		KTEXLIB3_EXPORT [[nodiscard]] std::vector<std::pair<std::string, IWICBitmap*>> CutImage(std::filesystem::path filepath, std::filesystem::path atlas_or_build);
 
 		KTEXLIB3_EXPORT [[nodiscard]] IWICBitmapFrameDecode* FileLoadWIC(std::filesystem::path& filepath);
 		
-		KTEXLIB3_EXPORT [[nodiscard]] IWICBitmap* MergeImages(std::vector<IWICBitmapSource*>& images, std::vector<boundry_box>& bboxes);
-		KTEXLIB3_EXPORT [[nodiscard]] IWICBitmap* MergeImages(std::vector<std::filesystem::path>& image_pathes, std::vector<boundry_box>& bboxes);
-		KTEXLIB3_EXPORT [[nodiscard]] IWICBitmap* MergeImages(std::filesystem::path folder, std::vector<boundry_box>& bboxes);
+		KTEXLIB3_EXPORT [[nodiscard]] IWICBitmap* MergeImages(std::vector<IWICBitmapSource*>& images, std::vector<bounding_box>& bboxes);
+		KTEXLIB3_EXPORT [[nodiscard]] IWICBitmap* MergeImages(std::vector<std::filesystem::path>& image_pathes, std::vector<bounding_box>& bboxes);
+		KTEXLIB3_EXPORT [[nodiscard]] IWICBitmap* MergeImages(std::filesystem::path folder, std::vector<bounding_box>& bboxes);
 	}
 }

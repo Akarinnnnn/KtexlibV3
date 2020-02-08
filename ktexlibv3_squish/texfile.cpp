@@ -8,10 +8,6 @@
 
 
 using std::cout, std::endl;
-namespace wicobj
-{
-	wil::com_ptr<IWICImagingFactory> factory;
-}
 
 using namespace ktexlib::v3detail;
 constexpr inline bool check_4n(unsigned int val)
@@ -22,24 +18,6 @@ constexpr inline bool check_4n(unsigned int val)
 constexpr inline unsigned int next_4n(unsigned int val)
 {
 	return (val & 0xFFFFFFF8u) + 4;
-}
-
-HRESULT ktexlib::v3::init_COM_as_mthread()
-{
-	HRESULT hr = CoInitializeEx(nullptr, COINITBASE_MULTITHREADED);
-	if (FAILED(hr) && hr != 0x80010106)
-	{
-		ErrorMsgbox(L"加载COM失败(hresult = %#08X)，即将退出", hr, 10);
-	}
-	if (FAILED(CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_ALL, IID_IWICImagingFactory2, (LPVOID*)&wicobj::factory)))
-	{
-		hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_ALL, IID_IWICImagingFactory, (LPVOID*)&wicobj::factory);
-		if (FAILED(hr))
-		{
-			ErrorMsgbox(L"创建WIC工厂失败(hresult = %#08X)，即将退出\n这个问题常见于精简版系统", hr, 11);
-		}
-	};
-	return hr;
 }
 
 void ktexlib::v3detail::Ktex::AddMipmap(const Mipmap& mipmap)
@@ -136,6 +114,20 @@ inline ktexlib::v3detail::Mipmap::Mipmap(const uint32_t w, const uint32_t h, con
 	this->data = std::move(data);
 }
 
+ktexlib::v3detail::Ktex ktexlib::v3::load_ktex(const wchar_t* path)
+{
+	std::ifstream file;
+	file.open(path);
+
+	if (!file.is_open())
+	{
+		auto errc = std::make_error_code((std::errc)errno);
+		throw std::system_error(errc, "open ktex file");
+	}
+
+	return load_ktex(file);
+}
+
 ktexlib::v3detail::Ktex ktexlib::v3::load_ktex(std::ifstream& file)
 {
 	using namespace ktexlib::v3detail;
@@ -189,7 +181,7 @@ uint32_t ComputePitchBC1(uint32_t w)
 	uint64_t nbw = std::max(1u, (w + 3u) / 4u);
 	return nbw * 8u;
 }
-Mipmap ktexlib::v3detail::convert(const RgbaImage& image, PixelFormat fmt, bool pararral)
+Mipmap ktexlib::v3detail::convert(const RgbaImage& image, PixelFormat fmt)
 {
 	switch (fmt)
 	{
@@ -232,9 +224,9 @@ Mipmap ktexlib::v3detail::convert(const RgbaImage& image, PixelFormat fmt, bool 
 	case ktexlib::v3detail::PixelFormat::r8g8b8:
 	{
 		auto pitch = image.width * 3;
-		if (pitch & 4)
+		if (pitch & 3)
 		{
-			pitch &= 4;
+			pitch &= (~3u);
 			pitch + 4;
 		}
 
@@ -245,12 +237,92 @@ Mipmap ktexlib::v3detail::convert(const RgbaImage& image, PixelFormat fmt, bool 
 		};
 		for (size_t i = 0; i < image.data.size(); i++)
 		{
-
+			if ((bool)(i & 3) && i != 0)
+				ret.data.push_back(image.data[i]);
+			else
+				continue;
 		}
-
 		break;
 		}
 	default:
+		throw std::invalid_argument("fmt");
 		break;
+	}
+}
+ktexlib::v3detail::RgbaImage ktexlib::v3detail::decompress(const Mipmap& mip, PixelFormat fmt)
+{
+	RgbaImage rgba;
+	rgba.width = mip.width;
+	rgba.height = mip.height;
+	rgba.pitch = rgba.width * 4u;
+	rgba.data.resize(rgba.pitch * rgba.height);
+	switch (fmt)
+	{
+	case ktexlib::v3detail::PixelFormat::dxt1:
+		squish::DecompressImage(rgba.data.data(), rgba.width, rgba.height,
+			mip.data.data(), squish::kDxt1);
+		break;
+	case ktexlib::v3detail::PixelFormat::dxt3:
+		squish::DecompressImage(rgba.data.data(), rgba.width, rgba.height,
+			mip.data.data(), squish::kDxt3);
+		break;
+	case ktexlib::v3detail::PixelFormat::dxt5:
+		squish::DecompressImage(rgba.data.data(), rgba.width, rgba.height,
+			mip.data.data(), squish::kDxt5);
+		break;
+	case ktexlib::v3detail::PixelFormat::rgba:
+		rgba.data = mip.data;
+		break;
+	case ktexlib::v3detail::PixelFormat::r8g8b8:
+	{
+		for (size_t i = 0; i < mip.data.size(); i += 3)
+		{
+			const auto* rgb = reinterpret_cast<const uint32_t*>(mip.data.data() + i);
+			uint32_t pixel = 0x00FFFFFF & *rgb; // uint32_t [ a | g | b | r ]
+
+			for (uint8_t i = 0; i < 4; i++)
+				rgba.data.push_back(*reinterpret_cast<uint8_t*>(&pixel + i));
+		}
+		break;
+	}
+	default:
+		throw std::invalid_argument("fmt");
+		break;
+	}
+	return rgba;
+}
+
+std::vector<wil::com_ptr<IWICBitmap>> gen_mips(IWICBitmapSource* img)
+{
+	using namespace ::comobj;
+	using wil::com_ptr;
+	UINT w = 0, h = 0;
+	std::vector<wil::com_ptr<IWICBitmap>> ret;
+
+	for (UINT size = w,flag = 1; size&flag; flag<<1)
+	{
+
+	}
+
+	/*com_ptr<IWICBitmapScaler> scaler;
+	wicfactory->CreateBitmapScaler(&scaler);
+	scaler->Initialize(img, );*/
+
+}
+
+Ktex ktexlib::v3detail::load_and_compress(std::filesystem::path path, PixelFormat fmt, bool gen_mips)
+{
+	using wil::com_ptr;
+	Ktex ret;
+
+	com_ptr<IWICBitmapFrameDecode> img;
+
+	if (gen_mips)
+	{
+
+	}
+	else
+	{
+
 	}
 }

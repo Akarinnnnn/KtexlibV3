@@ -5,4 +5,5 @@
 #include <windows.h>
 #include <wincodec.h>
 #include <wil/com.h>
+#include <d2d1.h>
 #endif

@@ -8,7 +8,7 @@
 #include <pugixml.hpp>
 
 using wil::com_ptr;
-static wil::com_ptr<ID2D1Factory> D2DFactory;
+
 #define hr_oom(msg)if (hr == E_OUTOFMEMORY) throw std::bad_alloc();\
 	THROW_IF_FAILED_MSG(hr,msg)
 #define hrthrow(msg) THROW_IF_FAILED_MSG(hr,msg)
@@ -38,7 +38,7 @@ bool Intersects(D2D1_RECT_F& a, D2D1_RECT_F& b)
 	return false;
 }
 
-bool Intersects(ktexlib::atlasv3::boundry_box& a, ktexlib::atlasv3::boundry_box& b)
+bool Intersects(ktexlib::atlasv3::bounding_box& a, ktexlib::atlasv3::bounding_box& b)
 {
 	if (
 		b.x >= a.x + a.w ||
@@ -54,14 +54,14 @@ IWICBitmapFrameDecode* ktexlib::atlasv3::FileLoadWIC(std::filesystem::path& file
 {
 	HRESULT hr;
 	com_ptr<IWICStream> stream;
-	hr = wicobj::factory->CreateStream(&stream);
+	hr = comobj::wicfactory->CreateStream(&stream);
 	THROW_IF_FAILED_MSG(hr, "create stream");
 
 	hr = stream->InitializeFromFilename(filepath.c_str(), GENERIC_READ);
 	THROW_IF_FAILED_MSG(hr, "init wic stream, filepath = %s", filepath.string().c_str());
 
 	com_ptr<IWICBitmapDecoder> decoder;
-	hr = wicobj::factory->CreateDecoderFromStream(stream.get(), nullptr,
+	hr = comobj::wicfactory->CreateDecoderFromStream(stream.get(), nullptr,
 		WICDecodeMetadataCacheOnLoad, &decoder);
 	THROW_IF_FAILED_MSG(hr, "create decoder");
 
@@ -82,15 +82,15 @@ void Draw(ID2D1RenderTarget* rt, ID2D1Bitmap* bmp, D2D_RECT_F& rect, size_t& i)
 	i++;
 }
 
-ktexlib::atlasv3::boundry_box d2drect2bbox(D2D_RECT_F& rect)
+ktexlib::atlasv3::bounding_box d2drect2bbox(D2D_RECT_F& rect)
 {
-	return ktexlib::atlasv3::boundry_box{
+	return ktexlib::atlasv3::bounding_box{
 	(uint32_t)(rect.right - rect.left),(uint32_t)(rect.bottom - rect.top),
 	rect.left,rect.top
 	};
 }
 
-bool check_and_draw2(ID2D1RenderTarget* rt, ID2D1Bitmap* bmp, std::vector<ktexlib::atlasv3::boundry_box>& bboxes,
+bool check_and_draw2(ID2D1RenderTarget* rt, ID2D1Bitmap* bmp, std::vector<ktexlib::atlasv3::bounding_box>& bboxes,
 	D2D1_RECT_F& current)
 {
 	auto curbbox = d2drect2bbox(current);
@@ -109,7 +109,7 @@ bool check_and_draw2(ID2D1RenderTarget* rt, ID2D1Bitmap* bmp, std::vector<ktexli
 	return false;
 }
 
-D2D1_RECT_F bbox2dxrect(ktexlib::atlasv3::boundry_box& lastbbox)
+D2D1_RECT_F bbox2dxrect(ktexlib::atlasv3::bounding_box& lastbbox)
 {
 	D2D1_RECT_F lastrect;
 	lastrect.top = lastbbox.y;
@@ -127,7 +127,7 @@ D2D1_RECT_F bbox2dxrect(ktexlib::atlasv3::boundry_box& lastbbox)
 /// <returns></returns>
 /// <example>
 /// <code>
-/// std::vector{boundry_box} out_bboxes;
+/// std::vector{bounding_box} out_bboxes;
 /// IWICBitmap* image = MergeImages(images, out_bboxes);
 /// </code>
 /// </example>
@@ -135,7 +135,7 @@ D2D1_RECT_F bbox2dxrect(ktexlib::atlasv3::boundry_box& lastbbox)
 /// <exception cref="std::bad_alloc"/>
 /// <created>Fa∏Î,2020/1/31</created>
 /// <changed>Fa∏Î,2020/1/31</changed>
-IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<IWICBitmapSource*>& images, std::vector<boundry_box>& bboxes)
+IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<IWICBitmapSource*>& images, std::vector<bounding_box>& bboxes)
 {
 	HRESULT hr = S_OK;
 	bboxes.clear();
@@ -150,14 +150,9 @@ IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<IWICBitmapSource*>& images
 	};
 	std::sort(images.begin(), images.end(), pred);
 
-	if (!D2DFactory)
-	{
-		hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_MULTI_THREADED, &D2DFactory);
-		hrthrow("Direct2D 1.0 Factory");
-	}
 
 	IWICBitmap* ret;
-	hr = wicobj::factory->CreateBitmap(
+	hr = comobj::wicfactory->CreateBitmap(
 		2048, 2048,
 		GUID_WICPixelFormat32bppRGBA,
 		WICBitmapNoCache, &ret);
@@ -180,7 +175,7 @@ IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<IWICBitmapSource*>& images
 	D2D_RECT_F lastrect;
 	for (auto* img : images)
 	{
-		boundry_box bbox{};
+		bounding_box bbox{};
 		img->GetSize(&bbox.w, &bbox.h);
 
 		com_ptr<ID2D1Bitmap> d2dbmp;
@@ -251,7 +246,7 @@ IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<IWICBitmapSource*>& images
 /// <returns></returns>
 /// <example>
 /// <code>
-/// std::vector{boundry_box} out_bboxes;
+/// std::vector{bounding_box} out_bboxes;
 /// IWICBitmap* image = MergeImages(folder, out_bboxes);
 /// </code>
 /// </example>
@@ -259,7 +254,7 @@ IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<IWICBitmapSource*>& images
 /// <exception cref="std::bad_alloc"/>
 /// <created>Fa∏Î,2020/1/31</created>
 /// <changed>Fa∏Î,2020/1/31</changed>
-IWICBitmap* ktexlib::atlasv3::MergeImages(std::filesystem::path folder, std::vector<boundry_box>& bboxes)
+IWICBitmap* ktexlib::atlasv3::MergeImages(std::filesystem::path folder, std::vector<bounding_box>& bboxes)
 {
 	using namespace std;
 	using namespace filesystem;
@@ -284,7 +279,7 @@ IWICBitmap* ktexlib::atlasv3::MergeImages(std::filesystem::path folder, std::vec
 /// <returns></returns>
 /// <example>
 /// <code>
-/// std::vector{boundry_box} out_bboxes;
+/// std::vector{bounding_box} out_bboxes;
 /// IWICBitmap* image = MergeImages(pathes, out_bboxes);
 /// </code>
 /// </example>
@@ -292,7 +287,7 @@ IWICBitmap* ktexlib::atlasv3::MergeImages(std::filesystem::path folder, std::vec
 /// <exception cref="std::bad_alloc"/>
 /// <created>Fa∏Î,2020/1/31</created>
 /// <changed>Fa∏Î,2020/1/31</changed>
-IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<std::filesystem::path>& image_pathes, std::vector<boundry_box>& bboxes)
+IWICBitmap* ktexlib::atlasv3::MergeImages(std::vector<std::filesystem::path>& image_pathes, std::vector<bounding_box>& bboxes)
 {
 	std::vector<IWICBitmapSource*> imgs;
 	for (auto& imgpath : image_pathes)
@@ -321,7 +316,7 @@ IWICBitmapSource* LoadWICImage(std::filesystem::path& filepath)
 		v3detail::filp(rgba.data._Unchecked_begin(), rgba.data._Unchecked_end(), rgba.pitch);
 
 		IWICBitmap* bitmapimage;
-		hr = wicobj::factory->CreateBitmapFromMemory(
+		hr = comobj::wicfactory->CreateBitmapFromMemory(
 			rgba.width, rgba.height,
 			GUID_WICPixelFormat32bppRGBA, WICBitmapCacheOnLoad,
 			rgba.data.size(), rgba.data.data(),
@@ -346,7 +341,7 @@ IWICBitmapSource* LoadWICImage(std::filesystem::path& filepath)
 /// <returns>WICÕºœÒ</returns>
 /// <created>Fa∏Î,2020/1/31</created>
 /// <changed>Fa∏Î,2020/1/31</changed>
-std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(std::filesystem::path filepath, std::vector<ktexlib::atlasv3::boundry_box>& bboxes)
+std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(std::filesystem::path filepath, std::vector<ktexlib::atlasv3::bounding_box>& bboxes)
 {
 	
 	wil::com_ptr<IWICBitmapSource> image;
@@ -356,7 +351,7 @@ std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(std::filesystem::path filepa
 	return CutImage(image.get(),bboxes);
 }
 
-std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(IWICBitmapSource* image, std::vector<ktexlib::atlasv3::boundry_box>& bboxes)
+std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(IWICBitmapSource* image, std::vector<ktexlib::atlasv3::bounding_box>& bboxes)
 {
 	std::vector<IWICBitmap*> ret_val;
 
@@ -364,7 +359,7 @@ std::vector<IWICBitmap*> ktexlib::atlasv3::CutImage(IWICBitmapSource* image, std
 	for (auto& bbox : bboxes)
 	{
 		IWICBitmap* single;
-		auto hr = wicobj::factory->CreateBitmapFromSourceRect(image, bbox.x, bbox.y, bbox.w, bbox.h, &single);
+		auto hr = comobj::wicfactory->CreateBitmapFromSourceRect(image, bbox.x, bbox.y, bbox.w, bbox.h, &single);
 		THROW_IF_FAILED_MSG(hr, "new form bbox(sourcerect)");
 		ret_val.push_back(single);
 	}
@@ -385,9 +380,9 @@ void  frame2xywh(pugi::xml_node_iterator& frame, float& x, float& y, uint32_t& w
 }
 
 
-[[nodiscard]] std::vector<std::string> LoadAtlas(pugi::xml_document& doc, uint32_t w0, uint32_t h0, std::vector<ktexlib::atlasv3::boundry_box>& bboxes)
+[[nodiscard]] std::vector<std::string> LoadAtlas(pugi::xml_document& doc, uint32_t w0, uint32_t h0, std::vector<ktexlib::atlasv3::bounding_box>& bboxes)
 {
-	using ktexlib::atlasv3::boundry_box;
+	using ktexlib::atlasv3::bounding_box;
 	std::vector<std::string> names;
 	pugi::xpath_query elements("Atlas/Elements/Element");
 	bboxes.clear();
@@ -400,7 +395,7 @@ void  frame2xywh(pugi::xml_node_iterator& frame, float& x, float& y, uint32_t& w
 				v1 = elem.attribute("v1").as_float(),
 				v2 = elem.attribute("v2").as_float();
 		bboxes.push_back(
-			boundry_box{
+			bounding_box{
 				Àƒ…·ŒÂ»Î((u2 - u1) * w0),
 				Àƒ…·ŒÂ»Î((v2 - v1) * h0),
 				u1 * w0,v1 * w0
@@ -410,7 +405,7 @@ void  frame2xywh(pugi::xml_node_iterator& frame, float& x, float& y, uint32_t& w
 	return names;
 }
 
-[[nodiscard]] std::vector<std::string> LoadBuild(KleiAnim::Binary::BuildReader build, std::vector<ktexlib::atlasv3::boundry_box>& bboxes)
+[[nodiscard]] std::vector<std::string> LoadBuild(KleiAnim::Binary::BuildReader build, std::vector<ktexlib::atlasv3::bounding_box>& bboxes)
 {
 	std::vector<std::string> names;
 	
@@ -419,7 +414,7 @@ void  frame2xywh(pugi::xml_node_iterator& frame, float& x, float& y, uint32_t& w
 		auto framecur = sym.frames.begin();
 		auto frameend = sym.frames.end();
 
-		ktexlib::atlasv3::boundry_box bbox{
+		ktexlib::atlasv3::bounding_box bbox{
 			framecur->w,framecur->h,
 			framecur->x,framecur->y
 		};
@@ -431,7 +426,7 @@ void  frame2xywh(pugi::xml_node_iterator& frame, float& x, float& y, uint32_t& w
 		{
 			for (uint32_t i = 1; framecur != frameend; ++framecur)
 			{
-				bboxes.push_back(ktexlib::atlasv3::boundry_box {
+				bboxes.push_back(ktexlib::atlasv3::bounding_box {
 					(uint32_t)framecur->w,(uint32_t)framecur->h,
 					framecur->x,framecur->y
 				});
@@ -457,7 +452,7 @@ std::vector<std::pair<std::string,IWICBitmap*>> ktexlib::atlasv3::CutImage(std::
 	std::vector<std::pair<std::string, IWICBitmap*>> ret;
 	uint32_t w0 = 0, h0 = 0;
 	std::vector<std::string> names;
-	std::vector<boundry_box> bboxes;
+	std::vector<bounding_box> bboxes;
 	com_ptr<IWICBitmapSource> image = LoadWICImage(filepath);
 	image->GetSize(&w0, &h0);
 
@@ -478,7 +473,7 @@ std::vector<std::pair<std::string,IWICBitmap*>> ktexlib::atlasv3::CutImage(std::
 				auto sym = _sym.node();
 				auto framecur = sym.children().begin();
 				auto frameend = sym.children().end();
-				boundry_box bbox;
+				bounding_box bbox;
 				frame2xywh(framecur, bbox.x, bbox.y, bbox.w, bbox.h);
 
 				names.push_back(sym.attribute(name).as_string());

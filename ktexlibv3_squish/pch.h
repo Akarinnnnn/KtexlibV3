@@ -11,9 +11,10 @@
 #include "framework.h"
 //exitcode为0时不退出
 void ErrorMsgbox(const wchar_t* format, const HRESULT hr, int exitcode);
-namespace wicobj
+namespace comobj
 {
-	extern wil::com_ptr<IWICImagingFactory> factory;
+	extern wil::com_ptr<IWICImagingFactory> wicfactory;
+	extern wil::com_ptr<ID2D1Factory> D2DFactory;
 }
 
 

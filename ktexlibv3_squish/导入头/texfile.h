@@ -156,7 +156,7 @@ namespace ktexlib
 		/// <returns></returns>
 		/// <created>Fa鸽,2019/12/28</created>
 		/// <changed>Fa鸽,2019/12/28</changed>
-		KTEXLIB3_EXPORT Mipmap convert(const RgbaImage& image, PixelFormat fmt = PixelFormat::dxt5, bool pararral = true);
+		KTEXLIB3_EXPORT Mipmap convert(const RgbaImage& image, PixelFormat fmt = PixelFormat::dxt5);
 
 		/// <summary>
 		/// 解压mipmap
@@ -168,7 +168,7 @@ namespace ktexlib
 		/// <changed>Fa鸽,2020/1/21</changed>
 		KTEXLIB3_EXPORT RgbaImage decompress(const Mipmap& Mipmap, PixelFormat fmt);
 
-		KTEXLIB3_EXPORT Ktex load_and_compress(std::filesystem::path path, PixelFormat fmt = PixelFormat::dxt5, bool gen_mips = false, bool pararral = true);
+		KTEXLIB3_EXPORT Ktex load_and_compress(std::filesystem::path path, PixelFormat fmt = PixelFormat::dxt5, bool gen_mips = false);
 
 		KTEXLIB3_EXPORT void filp(uint8_t * begin, uint8_t * end, size_t pitch);
 	}
@@ -181,15 +181,7 @@ namespace ktexlib
 		/// <returns>HRESULT</returns>
 		/// <created>Fa鸽,2020/1/18</created>
 		/// <changed>Fa鸽,2020/1/18</changed>
-		extern "C" KTEXLIB3_EXPORT HRESULT init_COM_as_mthread();
-
-		/// <summary>
-		/// 指定文件名，转换到同一目录
-		/// </summary>
-		/// <param name="filename">文件名</param>
-		/// <created>Fa鸽,2019/11/1</created>
-		/// <changed>Fa鸽,2019/11/15</changed>
-		extern "C" KTEXLIB3_EXPORT void gen_bc3universal(const char8_t* pngpath, const char8_t * output = nullptr);
+		extern "C" KTEXLIB3_EXPORT HRESULT Initalize();
 
 		/// <summary>
 		/// 指定UTF16文件名，转换到同一目录
@@ -201,23 +193,13 @@ namespace ktexlib
 		KTEXLIB3_EXPORT bool gen_bc3universal(const char16_t * path, const char16_t * outpath = nullptr);
 
 		/// <summary>
-		/// 指定宽字符文件名，转换到同一目录
+		/// 指定UTF16文件名，转换到同一目录
 		/// </summary>
 		/// <param name="path"></param>
 		/// <returns></returns>
 		/// <created>Fa鸽,2019/11/23</created>
 		/// <changed>Fa鸽,2019/11/23</changed>
 		KTEXLIB3_EXPORT bool gen_bc3universal(_In_ const wchar_t * path, _In_opt_ const wchar_t * outpath = nullptr);
-
-		/// <summary>
-		/// 加载一个tex文件
-		/// </summary>
-		/// <param name="path">生存期由调用方管理</param>
-		/// <returns></returns>
-		/// <exception cref="std::invalid_argument">不是ktex</exception>
-		/// <created>Fa鸽,2019/11/23</created>
-		/// <changed>Fa鸽,2019/11/23</changed>
-		KTEXLIB3_EXPORT ktexlib::v3detail::Ktex load_ktex(const char8_t* path);
 
 		/// <summary>
 		/// 加载一个tex文件
