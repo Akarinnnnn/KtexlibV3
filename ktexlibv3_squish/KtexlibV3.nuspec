@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+	<metadata>
+		<id>KtexlibV3</id>
+		<version>1.2.0</version>
+		<tags>native C++ cpp ds dst v142</tags>
+		<authors>Fa鸽</authors>
+		<license type="expression">MIT</license>
+		<requireLicenseAcceptance>false</requireLicenseAcceptance>
+		<description>Included a Klei's tex file loader, atlas parser(not stable), and some convert function
+visual studio 2019 is needed</description>
+		<repository type="git" url="https://github.com/Akarinnnnn/Ktexlibv3"/>
+		<copyright>Copyright ©2020 Fa鸽</copyright>
+		<dependencies>
+			<dependency id="directxtex_desktop_win10" version="2019.12.17.1"/>
+			<dependency id="KleiAnim" version="1.0.1.6"/>
+			<dependency id="pugixml" version="1.10.0"/>
+		</dependencies>
+	</metadata>
+	<files>
+		<file src="..\build\Debug_x86\ktexlib_v3.dll" target="build\Debug_x86\"/>
+		<file src="..\build\Debug_x86\ktexlib_v3.lib" target="build\Debug_x86\"/>
+		<file src="..\build\Debug_x86\ktexlib_v3.xml" target="build\Debug_x86\"/>
+		<file src="..\build\Debug_x86\ktexlib_v3.pdb" target="build\Debug_x86\"/>
+
+		<file src="..\build\Debug_x64\ktexlib_v3.dll" target="build\Debug_x64\"/>
+		<file src="..\build\Debug_x64\ktexlib_v3.lib" target="build\Debug_x64\"/>
+		<file src="..\build\Debug_x64\ktexlib_v3.xml" target="build\Debug_x64\"/>
+		<file src="..\build\Debug_x64\ktexlib_v3.pdb" target="build\Debug_x64\"/>
+
+		<file src="..\build\Release_x64\ktexlib_v3.dll" target="build\Release_x64\"/>
+		<file src="..\build\Release_x64\ktexlib_v3.lib" target="build\Release_x64\"/>
+		<file src="..\build\Release_x64\ktexlib_v3.xml" target="build\Release_x64\"/>
+		<file src="..\build\Release_x64\ktexlib_v3.pdb" target="build\Release_x64\"/>
+
+		<file src="..\build\Release_x86\ktexlib_v3.dll" target="build\Release_x86\"/>
+		<file src="..\build\Release_x86\ktexlib_v3.lib" target="build\Release_x86\"/>
+		<file src="..\build\Release_x86\ktexlib_v3.xml" target="build\Release_x86\"/>
+		<file src="..\build\Release_x86\ktexlib_v3.pdb" target="build\Release_x86\"/>
+		
+		<file src="导入头\" target="build\inc\KtexlibV3\"/>
+		<file src="KtexlibV3.targets" target="build\"/>
+	</files>
+
+</package>

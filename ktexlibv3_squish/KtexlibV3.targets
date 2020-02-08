@@ -2,13 +2,13 @@
 	<!-- general -->
 	<ItemDefinitionGroup>
 		<ClCompile>
-			<PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<PreprocessorDefinitions>KTEXLIBV3_SQUISH_INCLUDED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
 			<AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)inc\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
 		</ClCompile>
 
 		<Link>
 			<AdditionalLibraryDirectories>$(MSBuildThisFileDirectory)$(Configuration)_$(platformshortname)\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-			<AdditionalDependencies>$(MSBuildThisFileDirectory)$(Configuration)_$(platformshortname)\klei_anim.lib;%(AdditionalDependencies)</AdditionalDependencies>
+			<AdditionalDependencies>$(MSBuildThisFileDirectory)$(Configuration)_$(platformshortname)\*.lib;%(AdditionalDependencies)</AdditionalDependencies>
 		</Link>
 	</ItemDefinitionGroup>
 
