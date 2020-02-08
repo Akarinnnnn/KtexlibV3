@@ -10,6 +10,7 @@
 using std::cout, std::endl;
 
 using namespace ktexlib::v3detail;
+
 constexpr inline bool check_4n(unsigned int val)
 {
 	return !(val & 0xFFFFFFF8u);
@@ -18,6 +19,22 @@ constexpr inline bool check_4n(unsigned int val)
 constexpr inline unsigned int next_4n(unsigned int val)
 {
 	return (val & 0xFFFFFFF8u) + 4;
+}
+
+constexpr bool check_2pow(unsigned int x)
+{
+	return (x & (x - 1)) == 0;
+}
+
+constexpr unsigned int next_2pow(unsigned int x)
+{
+	int n = x - 1;
+	n |= n >> 1;
+	n |= n >> 2;
+	n |= n >> 4;
+	n |= n >> 8;
+	n |= n >> 16;
+	return n + 1;
 }
 
 void ktexlib::v3detail::Ktex::AddMipmap(const Mipmap& mipmap)
@@ -292,22 +309,71 @@ ktexlib::v3detail::RgbaImage ktexlib::v3detail::decompress(const Mipmap& mip, Pi
 	return rgba;
 }
 
-std::vector<wil::com_ptr<IWICBitmap>> gen_mips(IWICBitmapSource* img)
+std::vector<wil::com_ptr<IWICBitmapSource>> gen_mips(IWICBitmapSource* img0)
 {
 	using namespace ::comobj;
 	using wil::com_ptr;
+
 	UINT w = 0, h = 0;
-	std::vector<wil::com_ptr<IWICBitmap>> ret;
+	HRESULT hr = S_OK;
 
-	for (UINT size = w,flag = 1; size&flag; flag<<1)
+	img0->GetSize(&w, &h);
+	std::vector<wil::com_ptr<IWICBitmapSource>> ret;
+	ret.reserve(12);
+	com_ptr<IWICBitmapSource> img;
+	if (check_2pow(w) && check_2pow(h) && w == h)
 	{
+		img = img0;
+	}
+	else
+	{
+		auto edgelen = std::max(next_2pow(w), next_2pow(h));
+		w = edgelen, h = edgelen;
+		IWICBitmap* outimg;
+		com_ptr<ID2D1Bitmap> d2d;
+		com_ptr<ID2D1RenderTarget> rt;
+		auto rtprops = D2D1::RenderTargetProperties(D2D1_RENDER_TARGET_TYPE_HARDWARE,
+			D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+			0.0f, 0.0f
+		);
+		auto drawrect = D2D1::RectF(0, 0, w, h);
+		hr = wicfactory->CreateBitmap(edgelen, edgelen, GUID_WICPixelFormat32bppBGRA, WICBitmapNoCache, &outimg);
+		THROW_IF_FAILED_MSG(hr, "wic bitmap");
 
+		hr = D2DFactory->CreateWicBitmapRenderTarget(outimg, rtprops, &rt);
+		THROW_IF_FAILED_MSG(hr, "d2d rt");
+
+		hr = rt->CreateBitmapFromWicBitmap(img0, &d2d);
+		THROW_IF_FAILED_MSG(hr, "d2d bitmap");
+
+		rt->DrawBitmap(d2d.get(), drawrect);
+		
+		img.attach(outimg);
 	}
 
-	/*com_ptr<IWICBitmapScaler> scaler;
-	wicfactory->CreateBitmapScaler(&scaler);
-	scaler->Initialize(img, );*/
+	{
+		com_ptr<IWICFormatConverter> fmtconv;
+		hr = wicfactory->CreateFormatConverter(&fmtconv);
+		THROW_IF_FAILED_MSG(hr, "create wic format converter");
 
+		hr = fmtconv->Initialize(img.get(), GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, nullptr, 1.0, WICBitmapPaletteTypeMedianCut);
+		THROW_IF_FAILED_MSG(hr, "init wic format converter");
+
+		img = fmtconv;
+	}
+
+	for (UINT edgelen = w; edgelen; edgelen >> 1)
+	{
+		com_ptr<IWICBitmapScaler> scaler;
+		wicfactory->CreateBitmapScaler(&scaler);
+
+		hr = scaler->Initialize(img.get(), edgelen, edgelen, WICBitmapInterpolationModeLinear);
+		THROW_IF_FAILED_MSG(hr, "init wic scaler");
+
+		ret.push_back(std::move(scaler));
+	}
+
+	return ret;
 }
 
 Ktex ktexlib::v3detail::load_and_compress(std::filesystem::path path, PixelFormat fmt, bool gen_mips)
